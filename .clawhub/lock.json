@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "skills": {
+    "audit-code": {
+      "version": "1.0.0",
+      "installedAt": 1770604504651
+    },
+    "slack": {
+      "version": "1.0.0",
+      "installedAt": 1770604768043
+    }
+  }
+}
