@@ -2,11 +2,11 @@
 
 *Learn about the person you're helping. Update this as you go.*
 
-- **Name:** 
-- **What to call them:** 
-- **Pronouns:** *(optional)*
-- **Timezone:** 
-- **Notes:** 
+- **Name: Muhammad Yana Mulyana**
+- **What to call them: Yana**
+- **Pronouns:** *Yg Mulia*
+- **Timezone: Jakarta**
+- **Notes:**
 
 ## Context
 
