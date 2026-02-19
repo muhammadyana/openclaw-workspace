@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Ramadan Sahur 1h",
+    "schedule": "25 03 * * *",
+    "message": "\ud83c\udf05 **Reminder Sahur!**\n\nImsak dalam 1 jam ({reminders['imsak']}). Jangan lupa sahur!\n\n\ud83d\udca1 Saran menu sahur:\n\u2022 Nasi uduk/nasi goreng\n\u2022 Telur (rebus/goreng)\n\u2022 Susu/oatmeal\n\u2022 Kurma + air putih\n\nSemangat puasanya! \ud83d\udcaa"
+  },
+  {
+    "name": "Ramadan Sahur 30min",
+    "schedule": "55 03 * * *",
+    "message": "\u26a0\ufe0f **Waktu Sahur Sisa 30 Menit!**\n\nImsak jam 04:25. Cepat makan dan minum!\n\n\u23f0 Sisa waktu sedikit, segera selesaikan sahur!"
+  },
+  {
+    "name": "Ramadan Imsak 5min",
+    "schedule": "20 04 * * *",
+    "message": "\u23f0 **5 Menit Lagi Imsak!**\n\nSegera selesaikan makan dan minum. Imsak jam 04:25.\n\n\ud83e\udd32 Persiapkan niat puasa!"
+  },
+  {
+    "name": "Ramadan Buka 5min",
+    "schedule": "07 18 * * *",
+    "message": "\ud83c\udf19 **5 Menit Lagi Buka Puasa!**\n\nMaghrib jam 18:12. Siapkan menu buka:\n\n\u2022 Susu + kurma\n\u2022 Soto ayam (sedikit minyak)\n\u2022 Tahu tempe\n\u2022 Es buah (sedikit gula)\n\n\ud83e\udd32 Doa buka puasa: \"Allahumma laka shumtu wa bika aamantu wa 'ala rizqika aftartu\""
+  },
+  {
+    "name": "Ramadan Buka Time",
+    "schedule": "12 18 * * *",
+    "message": "\ud83c\udf19 **SELAMAT BERBUKA PUASA!**\n\nAlhamdulillah, waktu Maghrib telah tiba (18:12).\n\n\ud83e\udd32 Semoga puasa hari ini diterima. Selamat berbuka!\n\nJangan lupa sholat Maghrib ya! \ud83d\udd4c"
+  }
+]
