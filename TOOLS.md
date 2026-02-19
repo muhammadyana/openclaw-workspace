@@ -2,6 +2,21 @@
 
 Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
 
+## Workspace Location
+
+**Main workspace:** `/Users/yana/works/`
+
+**Raciq projects path:** `/Users/yana/works/raciq/`
+
+This is where all project repositories are located:
+- `/Users/yana/works/raciq/Raciqadmin` - Raciq Admin
+- `/Users/yana/works/raciq/Raciqfe` - Raciq Frontend
+- `/Users/yana/works/raciq/raciq-be` - Raciq Backend
+- `/Users/yana/works/iot/` - IoT/Smart home control
+- `/Users/yana/works/hermina/` - Hermina Workspace
+
+Always check this directory first when looking for project repositories.
+
 ## What Goes Here
 
 Things like:
@@ -24,7 +39,7 @@ Chat handler: `iot_chat.py` → called via `bin/iot-chat`
 
 **Command syntax I should detect:**
 - "turn on the light(s)" → lights ON
-- "turn off the light(s)" → lights OFF  
+- "turn off the light(s)" → lights OFF
 - "turn on workspace/tv/dispenser" → socket ON
 - "turn off all devices" → everything OFF
 - "matikan lampu" (Indonesian) → lights OFF
@@ -126,6 +141,63 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 **Chat commands I should detect:**
 - "open my camera" / "open cctv" → Opens Tapo C222
 - "show camera" / "view cctv" → Opens Tapo C222
+
+---
+
+### CCTV Surveillance Commands (SOP - MUST FOLLOW)
+
+**Trigger phrases:**
+- "what do you see" / "apa yang kamu lihat"
+- "what you hear" / "apa yang kamu dengar"
+- "what do you see and hear"
+
+**Actions for SEE:**
+1. Capture snapshot: `camsnap snap tapo --out /tmp/cctv_$(date +%Y%m%d_%H%M%S).jpg`
+2. Describe image in detail
+3. **SEND image via Telegram** (copy to workspace first)
+4. Generate TTS using **Gemini Live API** and send audio
+
+**Actions for HEAR:**
+1. Capture **10-second** audio: `camsnap clip tapo --dur 10s --out /tmp/cctv_audio.mp4`
+2. Convert to audio and transcribe
+3. **SEND audio file via Telegram**
+4. Include transcription in text
+
+**Actions for SEE + HEAR:**
+1. Capture BOTH simultaneously
+2. Process image (describe + send photo + TTS)
+3. Process audio (transcribe + send audio)
+
+**CRITICAL RULES:**
+- ALWAYS send actual image file, not just description
+- ALWAYS send actual audio file, not just transcription
+- ALWAYS generate TTS and send voice message
+- Include timestamp from camera overlay
+
+**Camera:** Tapo C222 (192.168.31.133, 2K resolution)
+
+**Gemini Live API Key:** `AIzaSyB24dZvCkIBV5FaxMvH6d3vBQjDLLfYbp4`
+
+---
+
+### Gemini Live API Setup (IN PROGRESS)
+
+**API Key:** `AIzaSyB24dZvCkIBV5FaxMvH6d3vBQjDLLfYbp4`
+
+**Status:** ⚠️ API Key configured but getting 404 errors
+
+**Setup Steps:**
+1. ✅ Gemini CLI installed (`gemini` v0.25.2)
+2. ✅ Config file created at `~/.config/gemini/config.json`
+3. ✅ Python script created at `~/.openclaw/workspace/scripts/gemini_tts.py`
+4. ❌ API returning 404 - possible issues:
+   - API key may need project activation
+   - Gemini API may require different endpoint for TTS
+   - Project may need billing enabled
+
+**Current Workaround:** Using default TTS (ElevenLabs) until Gemini Live API is fully configured.
+
+**Note:** Gemini Live API is different from regular Gemini chat API. For TTS, may need to use Google Cloud Text-to-Speech API instead.
 
 ---
 
