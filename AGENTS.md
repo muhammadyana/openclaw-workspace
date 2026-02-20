@@ -117,7 +117,20 @@ Reactions are lightweight social signals. Humans use them constantly — they sa
 
 Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
 
-**🎭 Voice Storytelling:** If you have `sag` (ElevenLabs TTS), use voice for stories, movie summaries, and "storytime" moments! Way more engaging than walls of text. Surprise people with funny voices.
+**🛒 Receipt/Expense Auto-Processing:**
+
+When user uploads a receipt/payment screenshot (BCA, QRIS, etc.):
+1. **ALWAYS auto-save to expense tracker** - run `expense.py add <image_path>` after confirmation
+2. **Do NOT just acknowledge** - actually save to database
+3. **Use auto-execute mode** - user preference: "Gausah tanya lagi"
+
+Example flow:
+```
+User sends BCA receipt → OCR extract → Confirm details → 
+exec: python3 expense.py add /path/to/receipt.jpg
+```
+
+This ensures daily reports show correct totals.
 
 **📝 Platform Formatting:**
 

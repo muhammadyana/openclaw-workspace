@@ -33,6 +33,25 @@
 
 ---
 
+## 🐛 Lessons Learned
+
+### Expense Tracker - Auto-Save Bug (20 Feb 2026)
+
+**Problem:** Receipts were OCR'd and acknowledged but NOT auto-saved to database.
+
+**Impact:** Daily reports showed Rp 0 when there were actually Rp 530,700 in transactions.
+
+**Root Cause:** I only described the receipt but never executed `expense.py add` command.
+
+**Fix:**
+1. Added 3 missing transactions manually to database
+2. Updated AGENTS.md with explicit instruction: ALWAYS auto-save receipts
+3. User preference confirmed: "Gausah tanya lagi" = auto-execute
+
+**Rule:** When user sends receipt/payment screenshot → OCR → Confirm → **EXECUTE SAVE**
+
+---
+
 ## 📹 CCTV Surveillance Commands
 
 ### Trigger Phrases
