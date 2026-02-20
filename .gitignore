@@ -25,3 +25,10 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# CCTV captures and temp images
+*camera_capture*.jpg
+*cctv_*.jpg
+*expense_chart*.png
+*.jpg
+*.png

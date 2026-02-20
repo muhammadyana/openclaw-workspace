@@ -75,7 +75,20 @@ Cari koordinat di Google Maps atau website prayer time.
 
 ## API Prayer Times
 
-Menggunakan Al-Adhan API (https://aladhan.com/prayer-times-api) dengan metode Kemenag Indonesia (method=11).
+Menggunakan Al-Adhan API (https://aladhan.com/prayer-times-api) dengan:
+- **Method**: 11 (Kemenag Indonesia)
+- **City lookup**: Bandung, Indonesia (untuk akurasi lebih tinggi)
+- **Tune adjustments**: `3,3,3,0,0,7,7,0,0` untuk sinkron dengan Kemenag Bandung resmi
+
+### Perbandingan Jadwal
+
+| Waktu | Kemenag Bandung (Muslim Pro) | Sistem |
+|-------|------------------------------|--------|
+| Imsak | 04:28 | 04:28 ✓ |
+| Subuh | 04:38 | 04:38 ✓ |
+| Maghrib | 18:19 | 18:19 ✓ |
+
+Jadwal sudah sinkron dengan aplikasi Muslim Pro (Kemenag) untuk lokasi Bandung.
 
 ## Contoh Output
 

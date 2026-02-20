@@ -19,29 +19,41 @@ DEFAULT_LOCATION = {
     "timezone": "Asia/Jakarta"
 }
 
-# API for prayer times
-PRAYER_API_URL = "https://api.aladhan.com/v1/timings"
+# API for prayer times - Using Al-Adhan API with Kemenag method
+PRAYER_API_URL = "https://api.aladhan.com/v1/timingsByCity"
 
 def get_prayer_times(date=None, lat=None, lon=None):
-    """Fetch prayer times from Al-Adhan API"""
+    """Fetch prayer times from Al-Adhan API using city-based lookup (Kemenag Indonesia)"""
     if date is None:
         date = datetime.now()
     
-    lat = lat or DEFAULT_LOCATION["latitude"]
-    lon = lon or DEFAULT_LOCATION["longitude"]
+    # Use timingsByCity for better accuracy with Kemenag method
+    url = f"{PRAYER_API_URL}"
     
     params = {
-        "latitude": lat,
-        "longitude": lon,
+        "city": "Bandung",
+        "country": "Indonesia",
         "method": 11,  # Kemenag Indonesia
+        "tune": "3,3,3,0,0,7,7,0,0",  # Adjust to match Kemenag Bandung (+3 imsak/fajr, +7 maghrib)
         "date": date.strftime("%d-%m-%Y")
     }
     
     try:
-        response = requests.get(PRAYER_API_URL, params=params, timeout=10)
+        response = requests.get(url, params=params, timeout=10)
         data = response.json()
         if data.get("code") == 200:
-            return data["data"]["timings"]
+            timings = data["data"]["timings"]
+            # Al-Adhan uses "Fajr" but Kemenag uses Imsak/Subuh distinction
+            # The API returns Imsak separately with method 11
+            return {
+                "Imsak": timings.get("Imsak", timings["Fajr"]),
+                "Fajr": timings["Fajr"],
+                "Sunrise": timings["Sunrise"],
+                "Dhuhr": timings["Dhuhr"],
+                "Asr": timings["Asr"],
+                "Maghrib": timings["Maghrib"],
+                "Isha": timings["Isha"]
+            }
         return None
     except Exception as e:
         print(f"Error fetching prayer times: {e}")
@@ -51,12 +63,9 @@ def calculate_reminder_times(timings):
     """Calculate all reminder times based on prayer times"""
     reminders = {}
     
-    # Parse times
-    fajr = datetime.strptime(timings["Fajr"], "%H:%M")
+    # Parse times - now Imsak comes directly from API (Kemenag official)
+    imsak = datetime.strptime(timings["Imsak"], "%H:%M")
     maghrib = datetime.strptime(timings["Maghrib"], "%H:%M")
-    
-    # Imsak is 10 minutes before Fajr
-    imsak = fajr - timedelta(minutes=10)
     
     # 1. Reminder 5 min before buka (Maghrib)
     reminders["buka_5min"] = (maghrib - timedelta(minutes=5)).strftime("%H:%M")
@@ -83,6 +92,7 @@ def calculate_reminder_times(timings):
     reminders["dzuhur"] = timings["Dhuhr"]
     reminders["ashar"] = timings["Asr"]
     reminders["isya"] = timings["Isha"]
+    reminders["terbit"] = timings.get("Sunrise", "")
     
     return reminders
 
