@@ -1,11 +1,24 @@
 ---
 name: expense-tracker
-description: Track expenses from receipt photos with OCR, auto-categorization, SQLite/Excel storage, and chart reporting
+description: Track expenses from receipt photos with OCR, auto-categorization, SQLite/Excel storage, and chart reporting. When user asks about expenses, ALWAYS use the exec tool to run the commands and show the output.
 ---
 
 # Expense Tracker
 
 Sistem pencatatan keuangan otomatis dari foto struk/invoice dengan OCR, kategorisasi otomatis, dan laporan grafik.
+
+## IMPORTANT - Execution Instructions
+
+When user asks anything about expenses (pengeluaran), you MUST:
+1. Use the `exec` tool to run the Python script
+2. Capture the output
+3. Return the output to user
+
+DO NOT just type the command as text - EXECUTE it using the shell/exec tool.
+
+Example execution:
+- Tool: `exec` or `shell`
+- Command: `python3 ~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py list --dari today --telegram`
 
 ## Fitur
 
@@ -34,9 +47,21 @@ python3 "$SKILL_DIR/scripts/expense.py" list
 python3 "$SKILL_DIR/scripts/expense.py" list --kategori "Makanan"
 ```
 
+### Laporan Harian (Daily Report)
+```bash
+python3 "$SKILL_DIR/scripts/expense.py" daily              # Hari ini
+python3 "$SKILL_DIR/scripts/expense.py" daily -d 2026-02-20  # Tanggal spesifik
+python3 "$SKILL_DIR/scripts/expense.py" daily --telegram     # Format mobile-friendly
+```
+
+### List dengan Format Telegram
+```bash
+python3 "$SKILL_DIR/scripts/expense.py" list --dari today --telegram
+```
+
 ### Laporan Bulanan
 ```bash
-python3 "$SKILL_DIR/scripts/expense.py" report --bulan 2 --tahun 2026
+python3 "$SKILL_DIR/scripts/expense.py" summary --bulan 2 --tahun 2026
 ```
 
 ### Export ke Excel
@@ -49,9 +74,9 @@ python3 "$SKILL_DIR/scripts/expense.py" export --output ~/expenses_2026.xlsx
 python3 "$SKILL_DIR/scripts/expense.py" chart --bulan 2
 ```
 
-### Daily Report (Manual)
+### Telegram Button Config
 ```bash
-python3 "$SKILL_DIR/scripts/daily_report.py"
+python3 "$SKILL_DIR/scripts/expense.py" buttons
 ```
 
 ## Daily Report (Cron Job)
@@ -106,6 +131,10 @@ python3 "$SKILL_DIR/scripts/expense.py" add --manual
 
 # List dengan filter
 python3 "$SKILL_DIR/scripts/expense.py" list [--kategori X] [--dari YYYY-MM-DD] [--sampai YYYY-MM-DD]
+python3 "$SKILL_DIR/scripts/expense.py" list --dari today  # Hari ini
+
+# Daily report
+python3 "$SKILL_DIR/scripts/expense.py" daily [--tanggal YYYY-MM-DD]
 
 # Summary/statistics
 python3 "$SKILL_DIR/scripts/expense.py" summary [--bulan N] [--tahun YYYY]
@@ -119,8 +148,35 @@ python3 "$SKILL_DIR/scripts/expense.py" export [--format excel|csv] [--output pa
 # Delete expense
 python3 "$SKILL_DIR/scripts/expense.py" delete <id>
 
-# Daily report (manual trigger)
-python3 "$SKILL_DIR/scripts/daily_report.py"
+# Get Telegram button config
+python3 "$SKILL_DIR/scripts/expense.py" buttons
+```
+
+## Telegram Button Shortcuts
+
+Untuk integrasi dengan Telegram bot, gunakan output dari command `buttons`:
+
+```bash
+python3 "$SKILL_DIR/scripts/expense.py" buttons
+```
+
+Output JSON:
+```json
+{
+  "inline_keyboard": [
+    [
+      {"text": "📊 Daily Report", "callback_data": "/expense daily"},
+      {"text": "📈 Monthly", "callback_data": "/expense summary --bulan 2"}
+    ],
+    [
+      {"text": "📝 List Today", "callback_data": "/expense list --dari today"},
+      {"text": "📉 Chart", "callback_data": "/expense chart"}
+    ],
+    [
+      {"text": "💾 Export Excel", "callback_data": "/expense export"}
+    ]
+  ]
+}
 ```
 
 ## Dependencies
