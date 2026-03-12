@@ -1,12 +1,13 @@
 #!/bin/bash
 # Daily Chat Backup Script for OpenClaw
-# This script is triggered by OpenClaw cron job
+# Captures both session metadata AND conversation history
 # Format: DD-MM-YYYY-chat.md
 
 BACKUP_DIR="/Users/yana/.openclaw/workspace/chats"
 DATE=$(date +"%d-%m-%Y")
 TIME=$(date +"%H:%M:%S")
 BACKUP_FILE="${BACKUP_DIR}/${DATE}-chat.md"
+AGENT_DIR="/Users/yana/.openclaw/agents/main"
 
 # Create backup directory if not exists
 mkdir -p "$BACKUP_DIR"
@@ -22,34 +23,25 @@ fi
 
 if [ "$APPEND_MODE" = false ]; then
     # Create markdown header for new file
-    cat > "$BACKUP_FILE" << 'HEADER'
-# Chat Backup - DATE_PLACEHOLDER
+    cat > "$BACKUP_FILE" << EOF
+# Chat Backup - ${DATE}
 
-**Backup Date:** DATE_PLACEHOLDER  
-**Backup Time:** TIME_PLACEHOLDER  
-**Hostname:** HOSTNAME_PLACEHOLDER  
-**User:** USER_PLACEHOLDER
+**Backup Date:** ${DATE}  
+**Backup Time:** ${TIME}  
+**Hostname:** $(hostname)  
+**User:** $(whoami)
 
 ---
 
 ## System Information
 
-- **OpenClaw Version:** OPENCLAW_VERSION_PLACEHOLDER
-- **Working Directory:** WORKDIR_PLACEHOLDER
-- **Backup Location:** BACKUP_FILE_PLACEHOLDER
+- **OpenClaw Version:** $(openclaw --version 2>/dev/null || echo 'unknown')
+- **Working Directory:** /Users/yana/.openclaw/workspace
+- **Backup Location:** ${BACKUP_FILE}
 
 ---
 
-HEADER
-
-    # Replace placeholders
-    sed -i '' "s/DATE_PLACEHOLDER/${DATE}/g" "$BACKUP_FILE"
-    sed -i '' "s/TIME_PLACEHOLDER/${TIME}/g" "$BACKUP_FILE"
-    sed -i '' "s/HOSTNAME_PLACEHOLDER/$(hostname)/g" "$BACKUP_FILE"
-    sed -i '' "s/USER_PLACEHOLDER/$(whoami)/g" "$BACKUP_FILE"
-    sed -i '' "s|OPENCLAW_VERSION_PLACEHOLDER|$(openclaw --version 2>/dev/null || echo 'unknown')|g" "$BACKUP_FILE"
-    sed -i '' "s|WORKDIR_PLACEHOLDER|/Users/yana/.openclaw/workspace|g" "$BACKUP_FILE"
-    sed -i '' "s|BACKUP_FILE_PLACEHOLDER|${BACKUP_FILE}|g" "$BACKUP_FILE"
+EOF
 fi
 
 # Add timestamp for this backup run
@@ -59,7 +51,34 @@ echo "" >> "$BACKUP_FILE"
 echo "## Backup Run - ${TIME}" >> "$BACKUP_FILE"
 echo "" >> "$BACKUP_FILE"
 
-# Try to get session info using openclaw CLI
+# Get current session ID from sessions.json
+CURRENT_SESSION_ID=$(jq -r '.["agent:main:main"].sessionId' "$AGENT_DIR/sessions/sessions.json" 2>/dev/null)
+
+if [ -n "$CURRENT_SESSION_ID" ] && [ -f "$AGENT_DIR/sessions/${CURRENT_SESSION_ID}.jsonl" ]; then
+    echo "Backing up conversation from session: $CURRENT_SESSION_ID"
+    
+    # Capture conversation history
+    echo "### Conversation History" >> "$BACKUP_FILE"
+    echo "" >> "$BACKUP_FILE"
+    
+    # Extract user and assistant messages
+    jq -r 'select(.type=="message") | 
+           if .message.role == "user" then 
+             "**User:** " + (.message.content[]? | select(.type=="text") | .text) 
+           elif .message.role == "assistant" then 
+             "**Assistant:** " + (.message.content[]? | select(.type=="text") | .text)
+           else empty end' \
+        "$AGENT_DIR/sessions/${CURRENT_SESSION_ID}.jsonl" 2>/dev/null >> "$BACKUP_FILE" || echo "*Could not extract conversation*" >> "$BACKUP_FILE"
+    
+    echo "" >> "$BACKUP_FILE"
+else
+    echo "### Conversation History" >> "$BACKUP_FILE"
+    echo "" >> "$BACKUP_FILE"
+    echo "*No active session found or session file not available*" >> "$BACKUP_FILE"
+    echo "" >> "$BACKUP_FILE"
+fi
+
+# Also capture session list for reference
 echo "### Active Sessions" >> "$BACKUP_FILE"
 echo "" >> "$BACKUP_FILE"
 echo '```' >> "$BACKUP_FILE"
