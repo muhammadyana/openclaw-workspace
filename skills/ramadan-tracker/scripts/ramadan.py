@@ -121,11 +121,38 @@ def get_iftar_menus():
     day = datetime.now().day
     return menus[day % len(menus)]
 
-def format_schedule_output(reminders):
+def format_schedule_output(reminders, telegram_format=False):
     """Format schedule for display"""
     menu = get_iftar_menus()
     
-    output = f"""
+    if telegram_format:
+        # Mobile-friendly format for Telegram
+        output = f"📅 *{datetime.now().strftime('%A, %d %B %Y')}*\n"
+        output += f"📍 {DEFAULT_LOCATION['city']}, {DEFAULT_LOCATION['country']}\n\n"
+        
+        output += "🌅 *Waktu Sholat:*\n"
+        output += f"• Imsak: `{reminders['imsak']}`\n"
+        output += f"• Subuh: `{reminders['fajr']}`\n"
+        output += f"• Dzuhur: `{reminders['dzuhur']}`\n"
+        output += f"• Ashar: `{reminders['ashar']}`\n"
+        output += f"• Maghrib: `{reminders['maghrib']}`\n"
+        output += f"• Isya: `{reminders['isya']}`\n\n"
+        
+        output += "⏰ *Jadwal Reminder:*\n"
+        output += f"• Sahur 1 jam: `{reminders['sahur_1h']}`\n"
+        output += f"• Sahur 30 menit: `{reminders['sahur_30min']}`\n"
+        output += f"• 5 menit sebelum imsak: `{reminders['imsak_5min']}`\n"
+        output += f"• 5 menit sebelum buka: `{reminders['buka_5min']}`\n\n"
+        
+        output += f"🍽️ *{menu['name']}:*\n"
+        for item in menu['items']:
+            output += f"• {item}\n"
+        
+        output += "\n✨ Semoga puasa lancar!"
+        return output
+    else:
+        # Standard format
+        output = f"""
 📅 **Jadwal Ramadan Hari Ini** ({datetime.now().strftime('%d %B %Y')})
 📍 Lokasi: {DEFAULT_LOCATION['city']}, {DEFAULT_LOCATION['country']}
 
@@ -145,11 +172,52 @@ def format_schedule_output(reminders):
 
 🍽️ **{menu['name']}:**
 """
-    for item in menu['items']:
-        output += f"• {item}\n"
+        for item in menu['items']:
+            output += f"• {item}\n"
+        
+        output += "\n✨ Semoga puasa lancar!"
+        return output
+
+def handle_callback(callback_data):
+    """Handle Telegram button callbacks"""
+    if callback_data == "ramadan_today":
+        timings = get_prayer_times()
+        if timings:
+            reminders = calculate_reminder_times(timings)
+            return format_schedule_output(reminders, telegram_format=True)
+        return "Failed to fetch prayer times"
     
-    output += "\n✨ Semoga puasa lancar!"
-    return output
+    elif callback_data == "ramadan_menu":
+        menu = get_iftar_menus()
+        output = f"🍽️ *{menu['name']}:*\n\n"
+        for item in menu['items']:
+            output += f"• {item}\n"
+        return output
+    
+    elif callback_data == "ramadan_location":
+        return f"""📍 *Lokasi:*
+{DEFAULT_LOCATION['city']}, {DEFAULT_LOCATION['country']}
+Koordinat: {DEFAULT_LOCATION['latitude']}, {DEFAULT_LOCATION['longitude']}
+
+Alamat lengkap:
+Jl. Tubagus Ismail VII No.11 ASekeloa, Coblong, Bandung"""
+    
+    return None
+
+def get_buttons_json():
+    """Generate button configuration for Telegram bot integration"""
+    buttons = {
+        "inline_keyboard": [
+            [
+                {"text": "📅 Jadwal Hari Ini", "callback_data": "ramadan_today"},
+                {"text": "🍽️ Menu Buka", "callback_data": "ramadan_menu"}
+            ],
+            [
+                {"text": "📍 Lokasi", "callback_data": "ramadan_location"}
+            ]
+        ]
+    }
+    print(json.dumps(buttons, indent=2))
 
 def create_cron_jobs():
     """Create cron jobs for all reminders"""
@@ -226,19 +294,22 @@ def main():
         print("Usage: ramadan.py <command>")
         print("")
         print("Commands:")
-        print("  today        - Show today's schedule")
-        print("  setup        - Create cron jobs for reminders")
-        print("  menu         - Show healthy iftar menu")
-        print("  location     - Show current location settings")
+        print("  today [--telegram]  - Show today's schedule")
+        print("  setup               - Create cron jobs for reminders")
+        print("  menu                - Show healthy iftar menu")
+        print("  location            - Show current location settings")
+        print("  buttons             - Get Telegram button config")
+        print("  callback <data>     - Handle Telegram button callback")
         sys.exit(1)
     
     command = sys.argv[1]
+    telegram_format = "--telegram" in sys.argv
     
     if command == "today":
         timings = get_prayer_times()
         if timings:
             reminders = calculate_reminder_times(timings)
-            print(format_schedule_output(reminders))
+            print(format_schedule_output(reminders, telegram_format))
         else:
             print("Failed to fetch prayer times")
     
@@ -259,6 +330,16 @@ def main():
         print(f"   Coordinates: {DEFAULT_LOCATION['latitude']}, {DEFAULT_LOCATION['longitude']}")
         print(f"   Timezone: {DEFAULT_LOCATION['timezone']}")
         print(f"\n   Full Address: Jl. Tubagus Ismail VII No.11 ASekeloa, Kecamatan Coblong, Kota Bandung, Jawa Barat 40134")
+    
+    elif command == "buttons":
+        get_buttons_json()
+    
+    elif command == "callback" and len(sys.argv) >= 3:
+        result = handle_callback(sys.argv[2])
+        if result:
+            print(result)
+        else:
+            print(f"Unknown callback: {sys.argv[2]}")
     
     else:
         print(f"Unknown command: {command}")

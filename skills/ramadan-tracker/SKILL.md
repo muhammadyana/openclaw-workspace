@@ -26,15 +26,7 @@ Koordinat: -6.8735, 107.6190
 ### Lihat Jadwal Hari Ini
 ```bash
 python3 "$SKILL_DIR/scripts/ramadan.py" today
-```
-
-### Setup Reminder Otomatis
-```bash
-# Generate cron jobs
-python3 "$SKILL_DIR/scripts/ramadan.py" setup
-
-# Lihat file cron yang di-generate
-cat ~/.openclaw/workspace/ramadan_cron_jobs.json
+python3 "$SKILL_DIR/scripts/ramadan.py" today --telegram  # Format mobile-friendly
 ```
 
 ### Lihat Menu Buka Puasa
@@ -45,6 +37,20 @@ python3 "$SKILL_DIR/scripts/ramadan.py" menu
 ### Cek Lokasi
 ```bash
 python3 "$SKILL_DIR/scripts/ramadan.py" location
+```
+
+### Telegram Button Config
+```bash
+python3 "$SKILL_DIR/scripts/ramadan.py" buttons
+```
+
+### Setup Reminder Otomatis
+```bash
+# Generate cron jobs
+python3 "$SKILL_DIR/scripts/ramadan.py" setup
+
+# Lihat file cron yang di-generate
+cat ~/.openclaw/workspace/ramadan_cron_jobs.json
 ```
 
 ## Reminder Schedule
