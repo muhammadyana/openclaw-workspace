@@ -1,0 +1,9 @@
+tools:
+  exec:
+    enabled: true
+  shell:
+    enabled: true
+  read:
+    enabled: true
+  write:
+    enabled: true
