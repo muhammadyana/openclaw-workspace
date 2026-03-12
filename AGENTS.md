@@ -117,20 +117,16 @@ Reactions are lightweight social signals. Humans use them constantly — they sa
 
 Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
 
-**🛒 Receipt/Expense Auto-Processing:**
+**🛒 Receipt/Expense Processing (UPDATED - NO OCR):**
 
-When user uploads a receipt/payment screenshot (BCA, QRIS, etc.):
-1. **ALWAYS auto-save to expense tracker** - run `expense.py add <image_path>` after confirmation
-2. **Do NOT just acknowledge** - actually save to database
-3. **Use auto-execute mode** - user preference: "Gausah tanya lagi"
+⚠️ **OCR DIHAPUS** - Terlalu sering salah detect merchant (misal "Total" jadi nama merchant)
 
-Example flow:
-```
-User sends BCA receipt → OCR extract → Confirm details → 
-exec: python3 expense.py add /path/to/receipt.jpg
-```
+**Cara catat pengeluaran sekarang:**
+1. **Manual input**: `expense.py add --merchant "Nama Toko" --total 50000`
+2. **Chat command**: "Catat, jajan cireng 6K" → aku extract manual
+3. **Struk foto**: Kirim detailnya, aku catat manual
 
-This ensures daily reports show correct totals.
+**User preference**: Auto-execute tanpa konfirmasi ("Gausah tanya lagi")
 
 **📝 Platform Formatting:**
 

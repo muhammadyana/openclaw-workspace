@@ -201,4 +201,74 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 
 ---
 
+### Expense Tracker
+
+**Location:** `~/.openclaw/workspace/skills/expense-tracker/`
+
+**Quick Commands:**
+```bash
+# Add receipt
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py add /path/to/receipt.jpg
+
+# Daily report (Telegram format)
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py daily --telegram
+
+# List today (Telegram format)
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py list --dari today --telegram
+
+# Monthly summary
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py summary --bulan 2
+
+# Generate chart
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py chart
+
+# Get button config
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py buttons
+```
+
+**Telegram Button Callbacks:**
+- `/expense daily --telegram`
+- `/expense list --dari today --telegram`
+- `/expense summary --bulan 2`
+- `/expense chart`
+- `/expense export`
+
+---
+
+### Ramadan Tracker
+
+**Location:** `~/.openclaw/workspace/skills/ramadan-tracker/`
+
+**Quick Commands:**
+```bash
+# Jadwal hari ini (Telegram format)
+~/.openclaw/workspace/skills/ramadan-tracker/scripts/ramadan.py today --telegram
+
+# Menu buka
+~/.openclaw/workspace/skills/ramadan-tracker/scripts/ramadan.py menu
+
+# Lokasi
+~/.openclaw/workspace/skills/ramadan-tracker/scripts/ramadan.py location
+
+# Get button config
+~/.openclaw/workspace/skills/ramadan-tracker/scripts/ramadan.py buttons
+```
+
+**Telegram Button Callbacks:**
+- `/ramadan today --telegram`
+- `/ramadan menu`
+- `/ramadan location`
+
+**Current Location:** Bandung (-6.8735, 107.6190)
+
+**Today's Prayer Times:**
+- Imsak: 04:28
+- Subuh: 04:38
+- Dzuhur: 12:03
+- Ashar: 15:10
+- Maghrib: 18:19
+- Isya: 19:22
+
+---
+
 Add whatever helps you do your job. This is your cheat sheet.

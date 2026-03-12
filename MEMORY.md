@@ -35,6 +35,32 @@
 
 ## 🐛 Lessons Learned
 
+### OpenClaw Control UI - Tool Calling Bug (10 Mar 2026)
+
+**Problem:** Tool calls (exec, read, etc.) tidak berfungsi dari control UI interface.
+
+**Symptoms:**
+- Command seperti `ls -la`, `pwd`, atau custom scripts tidak dieksekusi
+- Tidak ada output yang dikembalikan
+- Agent hanya merespons dengan text biasa tanpa eksekusi
+
+**Environment:**
+- Versi bermasalah: Sebelum 2026.3.2
+- Platform: Control UI (bukan Telegram/webchat)
+- Runtime: Agent main session
+
+**Root Cause:** Bug di versi OpenClaw sebelum 2026.3.2 yang menyebabkan tool calling dari control UI tidak diproses.
+
+**Fix:**
+- Downgrade/upgrade ke OpenClaw versi **2026.3.2**
+- Setelah update, tool calling berfungsi normal
+
+**Status:** ✅ Resolved
+
+**Report To:** https://github.com/openclaw/openclaw/issues (jika terjadi lagi)
+
+---
+
 ### Expense Tracker - Auto-Save Bug (20 Feb 2026)
 
 **Problem:** Receipts were OCR'd and acknowledged but NOT auto-saved to database.
@@ -91,22 +117,67 @@
 
 ### Features
 
-- OCR from receipt photos (tesseract + pytesseract)
-- Auto-extract: merchant, total, date, items
+- ✅ **Manual input only** (OCR dihapus - terlalu sering salah detect)
 - Auto-categorization: Makanan, Transport, Belanja, Hiburan, Kesehatan, Utilitas, Lainnya
 - Dual storage: SQLite + Excel export with charts
+- Telegram format (`--telegram` flag) for mobile-friendly output
+- Daily report command (`daily`)
+- Button config for Telegram integration
 
 ### User Preference
 
 - **Auto-execute without confirmation** ("Gausah tanya lagi, buat apa gue upload struk kalo bukan ditrack")
 
-### Usage
+### Commands
 
 ```bash
-# Via cron (daily at 22:00) or manual:
+# Add expense
 ~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py add /path/to/receipt.jpg
+
+# Daily report
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py daily
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py daily --telegram
+
+# List with Telegram format
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py list --dari today --telegram
+
+# Summary & chart
 ~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py summary --bulan 2
 ~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py chart
+
+# Telegram buttons config
+~/.openclaw/workspace/skills/expense-tracker/scripts/expense.py buttons
+```
+
+### Output Format (Preferred)
+
+Gunakan format tabel markdown saat konfirmasi expense:
+
+```
+✅ Expense tercatat!
+
+| Detail   | Value                 |
+| -------- | --------------------- |
+| Merchant | {nama merchant}       |
+| Amount   | Rp {total} (MYR {myr}) |
+| Category | {kategori}            |
+| Date     | {tanggal}             |
+| Payment  | {metode pembayaran}   |
+| Card     | {kartu/jenis}         |
+| Rate     | {rate} IDR/MYR        |  # jika transaksi MYR
+| ID       | #{id}                 |
+```
+
+### Telegram Button Shortcuts
+
+```json
+[
+  ["📊 Daily Report", "/expense daily --telegram"],
+  ["📈 Monthly", "/expense summary --bulan 2"],
+  ["📝 List Today", "/expense list --dari today --telegram"],
+  ["📉 Chart", "/expense chart"],
+  ["💾 Export Excel", "/expense export"]
+]
 ```
 
 ---
@@ -134,18 +205,70 @@ bird reply <id> "text"
 
 ---
 
-## 🌙 Ramadan Preparation
+## 🌙 Ramadan Tracker
 
-### Setup Needed
+### Location
 
-- Sahur/iftar reminders
-- Zakat calculator
-- Daily schedules
-- Prayer time notifications
+`~/.openclaw/workspace/skills/ramadan-tracker/`
 
-### Audio Note
+### Implemented (21 Feb 2026)
 
-User requested help for Ramadan ("tolong bantu aku nanti di bulan ramadhan")
+✅ **Sahur/iftar reminders** - Cron jobs otomatis
+✅ **Prayer times** - API Al-Adhan (Kemenag method)
+✅ **Daily schedules** - `/ramadan today --telegram`
+✅ **Telegram buttons** - Quick access jadwal & menu
+
+### Location Settings
+
+- **City**: Bandung
+- **Address**: Jl. Tubagus Ismail VII No.11 ASekeloa, Coblong
+- **Coordinates**: -6.8735, 107.6190
+
+### Today's Prayer Times (21 Feb 2026)
+
+| Waktu | Jam |
+|-------|-----|
+| Imsak | 04:28 |
+| Subuh | 04:38 |
+| Dzuhur | 12:03 |
+| Ashar | 15:10 |
+| Maghrib | 18:19 |
+| Isya | 19:22 |
+
+### Cron Jobs Active
+
+- Sahur 1 jam: 03:28
+- Sahur 30 menit: 03:58
+- 5 menit sebelum imsak: 04:23
+- 5 menit sebelum buka: 18:14
+- Buka puasa: 18:19
+
+### Commands
+
+```bash
+# Jadwal hari ini
+~/.openclaw/workspace/skills/ramadan-tracker/scripts/ramadan.py today
+~/.openclaw/workspace/skills/ramadan-tracker/scripts/ramadan.py today --telegram
+
+# Menu buka
+~/.openclaw/workspace/skills/ramadan-tracker/scripts/ramadan.py menu
+
+# Lokasi
+~/.openclaw/workspace/skills/ramadan-tracker/scripts/ramadan.py location
+
+# Button config
+~/.openclaw/workspace/skills/ramadan-tracker/scripts/ramadan.py buttons
+```
+
+### Telegram Button Shortcuts
+
+```json
+[
+  ["📅 Jadwal Hari Ini", "/ramadan today --telegram"],
+  ["🍽️ Menu Buka", "/ramadan menu"],
+  ["📍 Lokasi", "/ramadan location"]
+]
+```
 
 ---
 
@@ -190,5 +313,28 @@ User requested help for Ramadan ("tolong bantu aku nanti di bulan ramadhan")
 
 ---
 
-*Last updated: 19 Feb 2026*
-*Reconstructed from memory/ folder after history rewrite*
+## 📅 Recent Activity (21 Feb 2026)
+
+### Today's Expenses
+
+Total: **Rp 981.440** (6 transaksi)
+
+| ID | Merchant | Amount | Time |
+|----|----------|--------|------|
+| #58 | Shopee | Rp 46.850 | 23:53 |
+| #57 | Total (Aroem Bandung) | Rp 315.400 | 19:10 |
+| #56 | Aroem Bandung Berkah CV | Rp 100.000 | 17:29 |
+| #54 | Total Buah Tirtayasa | Rp 149.650 | 17:18 |
+| #53 | Shopee | Rp 265.040 | 16:18 |
+| #52 | PINHOME | Rp 104.500 | 11:48 |
+
+### Buka Puasa Menu (21 Feb)
+
+- Gurame Tom Yum 🐟🌶️
+- Kailan Dua Rasa 🥬🌿
+- Sapo Tahu Seafood 🍲🦐
+- Semangka + Es Teler 🍉🍨
+
+---
+
+*Last updated: 21 Feb 2026*
