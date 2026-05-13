@@ -6,6 +6,61 @@
 
 ## 🏥 Hermina Hospital API
 
+### Knowledge Base: MRN Per Branch (Afya System)
+
+#### Core Concept
+Di Afya, **setiap RS/branch punya MRN berbeda** untuk pasien yang sama. 1 pasien punya banyak MRN tergantung di mana aja dia pernah berobat.
+
+#### What Halo Hermina Records
+Yang dicatat di aplikasi Halo Hermina itu dari **API balikan check patient** — yaitu MRN dari branch tempat pasien bikin janji, bukan MRN global.
+
+#### Flow: How MRN Gets Assigned
+
+1. **Patient check** (`/v1/patientmgmt/master/patient/patientlist`):
+   - `AfyaIntegrable#check_afya_patient(hospital)` — dipanggil setiap kali bikin appointment
+   - Search by NIK + DOB, balikin patient data per branch
+   - **Dari sinilah MRN yang dipake diambil** (bukan dari column db profile)
+
+2. **Appointment creation** (`/v1/transaction/patientmgmt/appointment/patient/create`):
+   - `Simrs::Afya::Appointment::Create#assign_mrn_from_create_patient_check_result`
+   - Priority MRN:
+     1. `patient_check[:patient_data][:medical_record_number]` — dari check patient
+     2. `patient_check[:patient_data][:mrn]`
+     3. `response[:MedicalRecordNumber]` — dari response appointment create
+   - **Update profile's MRN:** `profile.update(medical_record_number: mrn)`
+   - **Appointment's MRN:** `appointment.mrn = mrn`
+
+3. **Sync via CheckByNikDob** (`/v1/afyamobilefamily/getpatientlist/forfamily`):
+   - Digunakan oleh `SyncAfyaMrn` service (cron job)
+   - Endpoint berbeda dari check pasien di atas
+
+#### Why Two Different MRNs Can Appear (Root Cause)
+
+- **Profile MRN (`medical_record_number` column)**: Bisa dari kunjungan sebelumnya di branch lain
+- **SIMRS Response MRN**: MRN spesifik untuk branch tujuan appointment
+
+Contoh real:
+| Source | MRN | Branch |
+|--------|-----|-------|
+| Profile DB column | 1190098741 | Branch A (kunjungan sebelumnya) |
+| Afya appointment response | 1130144544 | Pasteur - Klinik Mata Padma |
+
+#### Key Insight for Debugging
+
+- Jangan bandingin `profile.medical_record_number` dengan response SIMRS langsung — bisa beda karena beda branch
+- Yang bener dipake SIMRS untuk appointment itu MRN dari **response check patient per hospital**
+- Kalau MRN di profile tidak update setelah appointment, cek:
+  - Apakah `assign_mrn_from_create_patient_check_result` kepanggil?
+  - Apakah patient_data dari check result ada `medical_record_number`?
+  - Apakah `profile.update(medical_record_number: mrn)` berhasil (ada validasi?)
+- Ada **dua endpoint check pasien berbeda**:
+  1. `/v1/patientmgmt/master/patient/patientlist` — di `AfyaIntegrable#check_afya_patient` (dipake appointment create)
+  2. `/v1/afyamobilefamily/getpatientlist/forfamily` — di `CheckByNikDob` (dipake sync MRN job)
+
+---
+
+### Base URL
+
 ### Base URL
 
 `https://api.herminahospitals.com/api/v1/`
@@ -75,6 +130,28 @@
 3. User preference confirmed: "Gausah tanya lagi" = auto-execute
 
 **Rule:** When user sends receipt/payment screenshot → OCR → Confirm → **EXECUTE SAVE**
+
+---
+
+### S3 Upload - ACL Public-Read (10 Apr 2026)
+
+**Problem:** Files uploaded to S3 without `--acl public-read` returned AccessDenied when shared.
+
+**Impact:** Users couldn't access shared files via public URLs.
+
+**Root Cause:** Forgot to include `--acl public-read` flag in upload commands.
+
+**Fix:**
+1. Updated SKILL.md with critical warning about ACL
+2. Added rule to TOOLS.md: ALWAYS use `--acl public-read`
+3. Added MEMORY.md section for S3 upload best practices
+
+**Rules:**
+- ALWAYS include `--acl public-read` in all S3 upload commands
+- ALWAYS share the public URL: `https://herminafiles.s3.amazonaws.com/halohermina/openclaw/<filename>`
+- If AccessDenied occurs, fix immediately: `aws s3api put-object-acl --bucket herminafiles --key "halohermina/openclaw/<filename>" --acl public-read`
+
+**Status:** ✅ Resolved - all documentation updated
 
 ---
 
@@ -182,6 +259,18 @@ Gunakan format tabel markdown saat konfirmasi expense:
 
 ---
 
+## 📋 Hermina PEP Project Board
+
+**Board:** <https://github.com/orgs/herminadev/projects/6> (Hermina PEP)
+
+**Existing Issues Added:**
+- hermina-mobile [#68](https://github.com/herminadev/hermina-mobile/issues/68) — Reset Password OTP Mobile
+- hermina-core [#935](https://github.com/herminadev/hermina-core/issues/935) — BE Kirim OTP Email
+
+**Rule:** Semua issue yang berkaitan atau dibahas di grup #hermina-pep wajib dimasukkan ke project ini sebagai **Backlog**.
+
+**Constraint:** GitHub token perlu `project` write scope untuk auto-add via API. Saat ini cuma `read:project`.
+
 ## 🐦 X/Twitter (Bird CLI)
 
 ### Account
@@ -276,11 +365,40 @@ bird reply <id> "text"
 
 | Service | Status | Notes |
 |---------|--------|-------|
-| Gemini Live API | ⚠️ 404 Error | API key configured but needs billing/project setup |
+| Z.AI (GLM-5) | ✅ Active | API key updated 10 Apr 2026 |
+| Gemini Live API | ✅ Active | Default model: `gemini-3-pro-preview` |
 | OpenAI | ❌ Billing Limit | Hard limit reached - cannot use image editing |
-| OpenAI Whisper | ❌ Quota Exceeded | Using local Whisper CLI instead |
+| Anthropic | ❌ Credit Low | Balance too low |
+| Image Models | ⚠️ Limited | All paid models down — using Tesseract OCR as fallback |
 | SmartThings | ✅ Working | Token active |
 | Bird CLI | ✅ Working | Cookie-based auth |
+| Claude Code | ✅ Working | v2.1.89, alias `cc` in .zshrc |
+
+---
+
+## 📦 S3 Upload (herminafiles)
+
+### Configuration
+- **Bucket:** `herminafiles`
+- **Base path:** `halohermina/openclaw/`
+- **Public URL format:** `https://herminafiles.s3.amazonaws.com/halohermina/openclaw/<filename>`
+
+### Upload Commands (with ACL)
+```bash
+# Single file
+aws s3 cp <local-path> s3://herminafiles/halohermina/openclaw/<filename> --acl public-read
+
+# Multiple files
+aws s3 cp <local-path> s3://herminafiles/halohermina/openclaw/ --recursive --acl public-read
+```
+
+### Critical Rules (10 Apr 2026)
+- ✅ **ALWAYS include `--acl public-read`** - files are for public sharing
+- ✅ **ALWAYS share the public URL** after upload
+- ✅ **If AccessDenied occurs**, fix immediately:
+  ```bash
+  aws s3api put-object-acl --bucket herminafiles --key "halohermina/openclaw/<filename>" --acl public-read
+  ```
 
 ---
 
@@ -292,6 +410,7 @@ bird reply <id> "text"
 2. Auto-execute expense tracking without confirmation
 3. Prefer local tools over cloud APIs when possible
 4. Use fallback TTS while Gemini Live API has issues
+5. **S3 uploads MUST use `--acl public-read`** - always share public URL, fix AccessDenied immediately
 
 ### Travel Info
 
@@ -337,4 +456,60 @@ Total: **Rp 981.440** (6 transaksi)
 
 ---
 
-*Last updated: 21 Feb 2026*
+## 🔧 Config Changes (April 2026)
+
+### Default Model
+- Changed from `zai/glm-4.7` → `zai/glm-5` (10 Apr 2026)
+- Fallback chain: glm-4.7, glm-5v-turbo, glm-5-turbo, glm-5
+- Z.AI API key updated (10 Apr 2026)
+
+### Cron Jobs
+- **bug-triage**: Changed from weekdays-only to everyday (`0 6-18/3 * * *`)
+- **daily-error-report**: Changed from weekdays-only to everyday, reads last 5 messages from #errors
+- Both use Slack channel ID `C09KB8DU7DW` (not `#errors` name)
+- Timeout: 300 seconds (increased from 120)
+
+### OpenClaw Version
+- Updated to **2026.4.11** (12 Apr 2026)
+- Key improvements: timeout handling, failover, Dreaming ChatGPT import
+
+### Skills Added
+- **s3-upload** (`~/.openclaw/workspace/skills/s3-upload/`) — Auto-upload to `herminafiles` bucket
+
+### OCR Fallback
+- When image models are unavailable (billing/quotas), use **Tesseract OCR** (`tesseract <img> stdout -l ind+eng`)
+- Works well for Indonesian receipts
+
+---
+
+*Last updated: 13 Apr 2026*
+
+## Promoted From Short-Term Memory (2026-04-24)
+
+<!-- openclaw-memory-promotion:memory:memory/2026-04-16.md:443:445 -->
+- - Candidate: Possible Lasting Truths: Bug Triage & Daily Report Cron Fixes: **Fixes Applied:** [confidence=0.58 evidence=memory/2026-04-08.md:11-11]; Bug Triage & Daily Report Cron Fixes: **Problem:** Daily error report and bug-triage cron jobs kept failing with model errors. [confidence=0.58 - confidence: 0.62 - evidence: memory/2026-04-15.md:458-460 [score=0.845 recalls=0 avg=0.620 source=memory/2026-04-16.md:13-15]
+<!-- openclaw-memory-promotion:memory:memory/2026-04-17.md:388:390 -->
+- - Candidate: Possible Lasting Truths: Bug Triage & Daily Report Cron Fixes: **Fixes Applied:** [confidence=0.58 evidence=memory/2026-04-08.md:11-11]; Bug Triage & Daily Report Cron Fixes: **Problem:** Daily error report and bug-triage cron jobs kept failing with model errors. [confidence=0.58 - confidence: 0.62 - evidence: memory/2026-04-16.md:443-445 [score=0.845 recalls=0 avg=0.620 source=memory/2026-04-17.md:13-15]
+<!-- openclaw-memory-promotion:memory:memory/2026-04-18.md:438:440 -->
+- - Candidate: Possible Lasting Truths: Bug Triage & Daily Report Cron Fixes: **Fixes Applied:** [confidence=0.58 evidence=memory/2026-04-08.md:11-11]; Bug Triage & Daily Report Cron Fixes: **Problem:** Daily error report and bug-triage cron jobs kept failing with model errors. [confidence=0.58 - confidence: 0.62 - evidence: memory/2026-04-17.md:388-390 [score=0.838 recalls=0 avg=0.620 source=memory/2026-04-18.md:168-170]
+
+## Promoted From Short-Term Memory (2026-04-26)
+
+<!-- openclaw-memory-promotion:memory:memory/2026-04-20.md:424:426 -->
+- - Candidate: Possible Lasting Truths: Bug Fix: Hermina Run Resend Email Confirmation: "Translation missing: id.hermina_run_participants.resend.success"; "can't find record with friendly id: \"undefined\"" - resend sends undefined [confidence=0.58 evidence=memory/2026-04-14.md:353-354]; Bug Fi - confidence: 0.62 - evidence: memory/2026-04-19.md:444-446 [score=0.849 recalls=0 avg=0.620 source=memory/2026-04-20.md:173-175]
+<!-- openclaw-memory-promotion:memory:memory/2026-04-22.md:298:301 -->
+- - Candidate: Reflections: Theme: `assistant` kept surfacing across 433 memories.; confidence: 1.00; evidence: memory/2026-04-09.md:221-224, memory/2026-04-10.md:397-400, memory/2026-04-11.md:452-455; note: reflection - confidence: 0.62 - evidence: memory/2026-04-22.md:333-336 - recalls: 0 [score=0.836 recalls=0 avg=0.620 source=memory/2026-04-22.md:3-6]
+<!-- openclaw-memory-promotion:memory:memory/2026-04-22.md:308:310 -->
+- - Candidate: Possible Lasting Truths: Bug Fix: Hermina Run Resend Email Confirmation: "Translation missing: id.hermina_run_participants.resend.success"; "can't find record with friendly id: \"undefined\"" - resend sends undefined [confidence=0.58 evidence=memory/2026-04-14.md:353-354]; Bug Fi - confidence: 0.62 - evidence: memory/2026-04-21.md:318-320 [score=0.836 recalls=0 avg=0.620 source=memory/2026-04-22.md:123-125]
+
+## Promoted From Short-Term Memory (2026-04-27)
+
+<!-- openclaw-memory-promotion:memory:memory/2026-04-21.md:318:320 -->
+- - Candidate: Possible Lasting Truths: Bug Fix: Hermina Run Resend Email Confirmation: "Translation missing: id.hermina_run_participants.resend.success"; "can't find record with friendly id: \"undefined\"" - resend sends undefined [confidence=0.58 evidence=memory/2026-04-14.md:353-354]; Bug Fi - confidence: 0.62 - evidence: memory/2026-04-20.md:424-426 [score=0.857 recalls=0 avg=0.620 source=memory/2026-04-21.md:163-165]
+
+## Promoted From Short-Term Memory (2026-05-12)
+
+<!-- openclaw-memory-promotion:memory:memory/2026-05-07.md:5:5 -->
+- Yana explained: di Afya setiap RS/branch punya MRN beda-beda. 1 pasien punya banyak MRN tergantung di mana pernah berobat. Yang dicatat di Halo Hermina itu dari API balikan check patient — bukan MRN global. [score=0.865 recalls=0 avg=0.620 source=memory/2026-05-07.md:5-5]
+<!-- openclaw-memory-promotion:memory:memory/2026-05-07.md:7:7 -->
+- Saved detailed knowledge base entry ke MEMORY.md. [score=0.865 recalls=0 avg=0.620 source=memory/2026-05-07.md:7-7]
