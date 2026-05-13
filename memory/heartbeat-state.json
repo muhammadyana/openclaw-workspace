@@ -1,0 +1,10 @@
+{
+  "lastChecks": {
+    "bug-triage": "2026-03-24T09:00:00Z",
+    "errorsTriaged": 2,
+    "errors": [
+      "ActionDispatch::Http::MimeNegotiation::InvalidType - eap MIME type (staging - triaged 2026-03-22)",
+      "Net::SMTPSyntaxError - Invalid RCPT TO (production - triaged 2026-03-20)"
+    ]
+  }
+}
